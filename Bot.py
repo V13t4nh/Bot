@@ -4,9 +4,8 @@ import streamlit as st
 STATE_WEIGHTS = {
     "SQTT": 100, "QTT": 75, "XHT": 50, "CTT": 37.5, "T": 25,
     "SQTG": -100, "QTG": -75, "XHG": -50, "CTG": -37.5, "G": -25,
-    "SW": 0, "A": 12.5, "B": -12.5
+    "SW": 0, "MHT": 12.5, "MHG": -12.5
 }
-
 
 def calculate_p(timeframes, selected_states):
     total_weight = sum(STATE_WEIGHTS[selected_states[tf]] for tf in timeframes)
@@ -22,24 +21,24 @@ def calculate_p_region(price_entry, supports, resistances, p_large):
             nearest_level = level
     
     if nearest_level in supports:
-        if price_entry > nearest_level:  
+        if price_entry > nearest_level:  # Trên hỗ trợ
             if p_large > 0:
                 return 5
             elif p_large < 0:
                 return -5
             else:
                 return 2
-        else:  
+        else:  # Dưới hỗ trợ (giữa kênh)
             return 0
     elif nearest_level in resistances:
-        if price_entry < nearest_level: 
+        if price_entry < nearest_level:  # Dưới kháng cự
             if p_large > 0:
                 return -5
             elif p_large < 0:
                 return 5
             else:
                 return -2
-        else:  
+        else:  # Trên kháng cự (giữa kênh)
             return 0
     return 0
 
@@ -77,39 +76,72 @@ def group_consecutive_frames(frames, states):
 
 st.markdown("""
     <style>
-    .stSelectbox > div > div > div {
-        width: 100px !important;  /* Độ rộng vừa đủ cho 10 ký tự */
-        min-width: 100px !important;
-    }
+.stSelectbox > div > div > div {
+    width: 100px !important;
+    min-width: 100px !important;
+}
+
+.stSelectbox [data-baseweb="select"] svg {
+    visibility: visible !important;
+    display: block !important;
+    color: #000 !important;
+    opacity: 1 !important;
+}
+
+.stSelectbox [data-baseweb="select"] input {
+    cursor: pointer !important;
+    pointer-events: none !important;
+}
+
+.stSelectbox [data-baseweb="select"] {
+    border: 1px solid #ced4da !important;
+    border-radius: 4px !important;
+    background-color: #f8f9fa !important;
+}
     table, th, td {
         border: 1px solid black;
         border-collapse: collapse;
         padding: 5px;
-        text-align: left;
+        text-align: center;
     }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("Bot Test")
+st.title("Phân Tích Xu Hướng")
 
 st.header("TP & SL")
-equity = st.number_input("Equity ($)", min_value=100.0, value=100000.0)
-entry = st.number_input("Entry", value=3420.0)
-sl = st.number_input("SL", value=3380.0)
-tp = st.number_input("TP tham khảo", value=0.0)
+
+col1, col2 = st.columns(2)
+with col1:
+    st.markdown("**Equity ($)**")
+    equity = st.number_input("", min_value=100.0, value=100000.0, key="equity", 
+                            format="%.1f", step=100.0)
+    
+    st.markdown("**SL**")
+    sl = st.number_input("", value=50380.0, key="sl", 
+                         format="%.1f", step=1.0)
+
+with col2:
+    st.markdown("**Entry**")
+    entry = st.number_input("", value=50420.0, key="entry", 
+                           format="%.1f", step=1.0)
+    
+    st.markdown("**TP tham khảo**")
+    tp = st.number_input("", value=0.0, key="tp", 
+                        format="%.1f", step=1.0)
 
 risk_amount = equity * 0.01
 sl_percent = abs(entry - sl) / entry * 100 if entry != 0 else 0
 position_size = risk_amount / (sl_percent / 100 * equity) if sl_percent > 0 else 0
 st.write(f"Khối lượng đề xuất: {position_size:.2f} lot")
 if sl_percent > 5:
-    st.warning("Vượt ngưỡng rủi ro 5%!")
+    st.warning("⚠️Vượt ngưỡng rủi ro 5%!")
 
-st.header("1. Xu hướng chung")
+st.subheader("Trạng thái")
+    
 large_timeframes = ["W", "6D", "5D", "4D", "3D", "2D", "D", "H16", "H12"]
 states = list(STATE_WEIGHTS.keys())
 
-st.subheader("Chọn trạng thái cho khung lớn")
 large_states = {}
 for i in range(0, len(large_timeframes), 7):
     rows = st.columns(7)
@@ -118,9 +150,21 @@ for i in range(0, len(large_timeframes), 7):
             tf = large_timeframes[i + j]
             large_states[tf] = col.selectbox(tf, states, index=states.index("SW"), key=f"large_{tf}")
 
+small_timeframes = ["D", "H16", "H12", "H11", "H10", "H9", "H8", "H7", "H6", "H5", "H4", "H3", "H2", "H1"]
+
+small_states = {}
+for i in range(0, len(small_timeframes), 7):
+    rows = st.columns(7)
+    for j, col in enumerate(rows):
+        if i + j < len(small_timeframes):
+            tf = small_timeframes[i + j]
+            small_states[tf] = col.selectbox(tf, states, index=states.index("SW"), key=f"small_{tf}")
+st.header("Xu hướng chung")
+
+
 p_large = calculate_p(large_timeframes, large_states)
 if all(state == "SW" for state in large_states.values()):
-    st.warning("Tất cả khung lớn là Sideway. Vui lòng chọn trạng thái khác để phân tích chính xác hơn.")
+    st.warning("⚠️Tất cả khung lớn là Sideway. Vui lòng chọn trạng thái khác để phân tích chính xác hơn.")
 
 increase_large = [tf for tf in large_timeframes if STATE_WEIGHTS[large_states[tf]] > 0]
 decrease_large = [tf for tf in large_timeframes if STATE_WEIGHTS[large_states[tf]] < 0]
@@ -155,34 +199,23 @@ st.markdown(table_html, unsafe_allow_html=True)
 trend_large = classify_trend(p_large)
 st.write(f"**Kết luận xu hướng chung**: {trend_large} ({p_large:.2f}%)")
 if trend_large == "Sideway":
-    st.warning("SW! Cần tín hiệu xác nhận trước khi giao dịch")
-st.text_area("Đánh Giá (Xu hướng chung)", max_chars=1000, key="large_assessment")
+    st.warning("⚠️SW cần tín hiệu xác nhận trước khi giao dịch")
+st.text_area("Đánh Giá (Xu hướng chung)", max_chars=1000, key="large_assessment", height=200)
 
-st.header("2. Khung thời gian nhỏ")
-small_timeframes = ["1D", "H16", "H12", "H11", "H10", "H9", "H8", "H7", "H6", "H5", "H4", "H3", "H2", "H1"]
+st.header("Khung thời gian nhỏ")
 
-st.subheader("Chọn trạng thái cho khung nhỏ")
-small_states = {}
-for i in range(0, len(small_timeframes), 7):
-    rows = st.columns(7)
-    for j, col in enumerate(rows):
-        if i + j < len(small_timeframes):
-            tf = small_timeframes[i + j]
-            small_states[tf] = col.selectbox(tf, states, index=states.index("SW"), key=f"small_{tf}")
-
-# Tính P nhỏ
 p_small = calculate_p(small_timeframes, small_states)
 if all(state == "SW" for state in small_states.values()):
-    st.warning("Tất cả khung nhỏ là Sideway. Vui lòng chọn trạng thái khác để phân tích chính xác hơn.")
+    st.warning("⚠️Tất cả khung nhỏ là Sideway. Vui lòng chọn trạng thái khác để phân tích chính xác hơn.")
 
 if p_large > 0 and p_small > 0:  
     p_small += 10
-elif p_large < 0 and p_small < 0:  
-    p_small -= 10  
-elif p_large > 0 and p_small < 0: 
+elif p_large < 0 and p_small < 0: 
+    p_small -= 10 
+elif p_large > 0 and p_small < 0:  
     p_small -= 20
 elif p_large < 0 and p_small > 0:  
-    st.warning("Rủi ro tăng 15%: Xu hướng chung giảm nhưng sóng ngắn hạn tăng.")
+    st.warning("⚠️Rủi ro tăng 15%: Xu hướng chung giảm nhưng sóng ngắn hạn tăng.")
 
 increase_small = [tf for tf in small_timeframes if STATE_WEIGHTS[small_states[tf]] > 0]
 decrease_small = [tf for tf in small_timeframes if STATE_WEIGHTS[small_states[tf]] < 0]
@@ -217,10 +250,10 @@ st.markdown(table_html, unsafe_allow_html=True)
 trend_small = classify_trend(p_small)
 st.write(f"**Kết luận xu hướng nhỏ**: {trend_small} ({p_small:.2f}%)")
 if trend_small == "Sideway":
-    st.warning("SW! Bám vào cấu trúc sóng để vào lệnh, cực kỳ cẩn trọng")
-st.text_area("Đánh Giá (Xu hướng nhỏ)", max_chars=1000, key="small_assessment")
+    st.warning("⚠️Bám vào cấu trúc sóng để vào lệnh, cực kỳ cẩn trọng")
+st.text_area("Đánh Giá (Xu hướng nhỏ)", max_chars=1000, key="small_assessment", height=200)
 
-st.header("3. Nhận định tổng hợp")
+st.header("Nhận định tổng hợp")
 if trend_large == trend_small:
     st.write("Đồng Thuận, Kỳ Vọng")
 else:
@@ -230,18 +263,24 @@ else:
     elif "Giảm" in trend_large and "Tăng" in trend_small:
         st.write("Xu hướng chung là Giảm, nhưng sóng ngắn hạn có dấu hiệu hồi phục. Hãy theo dõi thêm tín hiệu xác nhận.")
     st.write("Ngược Pha, Cẩn Trọng")
-st.text_area("Đánh Giá (Nhận định tổng hợp)", max_chars=1000, key="summary_assessment")
+st.text_area("Đánh Giá (Nhận định tổng hợp)", max_chars=1000, key="summary_assessment", height=200)
 
-# 4. Vùng giá
-st.header("4. Vùng giá")
-st.text_area("Đánh Giá & Kịch Bản", value="Kịch bản Tăng → khung đảm bảo cấu trúc tăng, khung cho phép tăng là ?\nKịch bản Giảm → khung đảm bảo cấu trúc giảm, khung cho phép giảm là ?\nKịch bản Sideway → điều kiện xác nhận đi ngang?", max_chars=3000, key="region_assessment")
+st.header("Vùng giá")
+st.text_area("Đánh Giá & Kịch Bản", value="Kịch bản Tăng → khung đảm bảo cấu trúc tăng, khung cho phép tăng là ?\nKịch bản Giảm → khung đảm bảo cấu trúc giảm, khung cho phép giảm là ?\nKịch bản Sideway → điều kiện xác nhận đi ngang?", max_chars=3000, key="region_assessment", height=400)
 trendline = st.checkbox("Trendline")
-resistance_1 = st.number_input("Vùng kháng cự 1", value=100000.0)
-resistance_2 = st.number_input("Vùng kháng cự 2", value=100000.0)
-resistance_3 = st.number_input("Vùng kháng cự 3", value=100000.0)
-support_1 = st.number_input("Vùng hỗ trợ 1", value=3400.0)
-support_2 = st.number_input("Vùng hỗ trợ 2", value=100000.0)
-support_3 = st.number_input("Vùng hỗ trợ 3", value=100000.0)
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    resistance_1 = st.number_input("Vùng kháng cự 1", value=100000.0)
+    support_1 = st.number_input("Vùng hỗ trợ 1", value=3400.0)
+
+with col2:
+    resistance_2 = st.number_input("Vùng kháng cự 2", value=100000.0)
+    support_2 = st.number_input("Vùng hỗ trợ 2", value=100000.0)
+
+with col3:
+    resistance_3 = st.number_input("Vùng kháng cự 3", value=100000.0)
+    support_3 = st.number_input("Vùng hỗ trợ 3", value=100000.0)
 
 supports = [s for s in [support_1, support_2, support_3] if s != 0 and s != 100000]
 resistances = [r for r in [resistance_1, resistance_2, resistance_3] if r != 0 and r != 100000]
@@ -251,7 +290,7 @@ p_total = (p_large * 0.6) + (p_small * 0.3) + (p_region * 0.1)
 
 st.write(f"**Tổng: {p_total:.2f}%**")
 
-st.header("5. Hành động")
+st.header("Hành động")
 action = st.checkbox("Hành Động")
 stand_out = st.checkbox("Đứng Ngoài")
 if action:
@@ -259,14 +298,13 @@ if action:
 elif stand_out:
     st.text_area("Lý Do", value="Cần quan sát kỹ khung nào?\nKhoảng thời gian quan trọng cần theo dõi?", max_chars=1000, key="standout_reason")
 
-st.header("7. Tư duy giao dịch")
+st.header("Tư duy giao dịch")
 cautious = st.checkbox("Cẩn Trọng (giảm 50% Vol)", value=(trend_large != trend_small))
 expectation = st.checkbox("Kỳ Vọng (Không sợ rung cây)", value=(trend_large == trend_small))
 
-
 st.write(f"**Tổng: {p_total:.2f}%**")
 
-st.header("8. Đề xuất của thuật toán")
+st.header("Đề xuất của thuật toán")
 if p_total > 60:
     st.write("Bật công tắc tham lam")
 elif p_total < 40:
