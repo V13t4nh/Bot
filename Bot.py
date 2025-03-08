@@ -106,7 +106,7 @@ if sl_percent > 5:
     st.warning("Vượt ngưỡng rủi ro 5%!")
 
 st.header("1. Xu hướng chung")
-large_timeframes = ["H12", "H16", "1D", "2D", "3D", "4D", "5D", "6D", "W"]
+large_timeframes = ["W", "6D", "5D", "4D", "3D", "2D", "D", "H16", "H12"]
 states = list(STATE_WEIGHTS.keys())
 
 st.subheader("Chọn trạng thái cho khung lớn")
@@ -159,7 +159,7 @@ if trend_large == "Sideway":
 st.text_area("Đánh Giá (Xu hướng chung)", max_chars=1000, key="large_assessment")
 
 st.header("2. Khung thời gian nhỏ")
-small_timeframes = ["H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "H10", "H11", "H12", "H16", "1D"]
+small_timeframes = ["1D", "H16", "H12", "H11", "H10", "H9", "H8", "H7", "H6", "H5", "H4", "H3", "H2", "H1"]
 
 st.subheader("Chọn trạng thái cho khung nhỏ")
 small_states = {}
