@@ -2,36 +2,46 @@ import streamlit as st
 
 
 
+st.set_page_config(page_title="Ứng dụng được bảo vệ")
+
+# Hàm kiểm tra mật khẩu
 def check_password():
     """Trả về `True` nếu người dùng nhập đúng mật khẩu."""
     
-    def password_entered():
-        """Kiểm tra xem mật khẩu đã nhập có chính xác không."""
-        if st.session_state["password"] == "mật_khẩu_của_bạn":
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]  # Xóa mật khẩu từ session state
-        else:
-            st.session_state["password_correct"] = False
-
-    # Nếu "password_correct" không có trong session_state, hoặc nếu giá trị là False, hiển thị form nhập mật khẩu
+    # Khởi tạo session_state
     if "password_correct" not in st.session_state:
         st.session_state["password_correct"] = False
-        
-    if not st.session_state["password_correct"]:
-        st.text_input(
-            "Vui lòng nhập mật khẩu", 
-            type="password", 
-            on_change=password_entered, 
-            key="password"
-        )
-        return False
     
-    return True
+    if st.session_state["password_correct"]:
+        return True
+    
+    # Hiển thị form nhập mật khẩu
+    st.title("Ứng dụng cần xác thực")
+    password = st.text_input("Nhập mật khẩu để truy cập", type="password", key="password_input")
+    
+    if st.button("Đăng nhập"):
+        if password == "mật_khẩu_của_bạn":  # Thay "mật_khẩu_của_bạn" bằng mật khẩu thực tế
+            st.session_state["password_correct"] = True
+            st.experimental_rerun()  # Quan trọng: khởi chạy lại ứng dụng
+        else:
+            st.error("❌ Mật khẩu không chính xác. Vui lòng thử lại.")
+    
+    # Thêm thông tin nếu muốn
+    st.markdown("---")
+    st.markdown("Vui lòng liên hệ admin để nhận mật khẩu.")
+    
+    return False
 
+# Kiểm tra xác thực
 if check_password():
-   
-    st.title("Phân tích xu hướng")
-    st.write("Hello Fen!")
+    # CHỈ hiển thị nội dung này khi đã xác thực thành công
+    st.title("Ứng dụng chính")
+    st.success("🎉 Xác thực thành công! Chào mừng bạn đến với ứng dụng.")
+    
+    # Thêm nút đăng xuất
+    if st.button("Đăng xuất"):
+        st.session_state["password_correct"] = False
+        st.experimental_rerun()
 
 
 
