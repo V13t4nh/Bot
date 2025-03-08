@@ -1,6 +1,40 @@
 import streamlit as st
 
 
+
+def check_password():
+    """Trả về `True` nếu người dùng nhập đúng mật khẩu."""
+    
+    def password_entered():
+        """Kiểm tra xem mật khẩu đã nhập có chính xác không."""
+        if st.session_state["password"] == "mật_khẩu_của_bạn":
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Xóa mật khẩu từ session state
+        else:
+            st.session_state["password_correct"] = False
+
+    # Nếu "password_correct" không có trong session_state, hoặc nếu giá trị là False, hiển thị form nhập mật khẩu
+    if "password_correct" not in st.session_state:
+        st.session_state["password_correct"] = False
+        
+    if not st.session_state["password_correct"]:
+        st.text_input(
+            "Vui lòng nhập mật khẩu", 
+            type="password", 
+            on_change=password_entered, 
+            key="password"
+        )
+        return False
+    
+    return True
+
+if check_password():
+   
+    st.title("Phân tích xu hướng")
+    st.write("Hello Fen!")
+
+
+
 STATE_WEIGHTS = {
     "SQTT": 100, "QTT": 75, "XHT": 50, "CTT": 37.5, "T": 25,
     "SQTG": -100, "QTG": -75, "XHG": -50, "CTG": -37.5, "G": -25,
