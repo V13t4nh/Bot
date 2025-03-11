@@ -3,9 +3,9 @@ import streamlit as st
 
 
 STATE_WEIGHTS = {
-    "SQTT": 100, "QTT": 75, "XHT": 50, "CTT": 37.5, "T": 25,
-    "SQTG": -100, "QTG": -75, "XHG": -50, "CTG": -37.5, "G": -25,
-    "SW": 0, "MHT": 12.5, "MHG": -12.5
+    "SQTT": 100, "QTT": 75, "XHT": 50, "CTT": 37.5, "T": 25, "MHT": 12.5,
+    "SQTG": -100, "QTG": -75, "XHG": -50, "CTG": -37.5, "G": -25, "MHG": -12.5,
+    "SW": 0,
 }
 
 
