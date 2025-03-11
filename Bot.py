@@ -1,6 +1,24 @@
 import streamlit as st
 
+def format_number(number, decimals):
+    """
+    Định dạng số với số chữ số thập phân cố định.
+    """
+    return f"{number:.{decimals}f}"
 
+def calculate_position_size(entry_price, stop_loss, equity, risk_percentage, contract_size=1):
+     if entry_price == 0 or stop_loss == 0:
+        return 0, 0, 0
+        
+    risk_amount = equity * (risk_percentage / 100)
+    
+    stop_loss_percentage = abs(entry_price - stop_loss) / entry_price
+    
+    position_size_units = risk_amount / (entry_price * stop_loss_percentage)
+    
+    position_size_lots = position_size_units / contract_size
+    
+    return position_size_lots, position_size_units, risk_amount
 
 STATE_WEIGHTS = {
     "SQTT": 100, "QTT": 75, "XHT": 50, "CTT": 37.5, "T": 25, "MHT": 12.5,
@@ -136,6 +154,22 @@ st.markdown("""
         padding: 5px;
         text-align: center;
     }
+
+.result-container {
+        background-color: #f0f0f0;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        text-align: center;
+    }
+    .big-number {
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .label {
+        font-size: 12px;
+        color: #666;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -147,6 +181,14 @@ st.header("TP & SL")
 col1, col2 = st.columns(2)
 
 with col1:
+    st.markdown("**Công cụ**")
+    instrument = st.selectbox(
+        "",
+        options=["BTC/USD", "ETH/USD", "EUR/USD"], 
+        index=0,
+        key="instrument"
+    )
+    
     st.markdown("**Equity ($)**")
     equity = st.number_input("", min_value=100.0, value=100000.0, key="equity", 
                             format="%.1f", step=100.0)
@@ -154,9 +196,21 @@ with col1:
     st.markdown("**SL**")
     sl = st.number_input("", value=50380.0, key="sl", 
                          format="%.1f", step=1.0)
+    
+    st.markdown("**Quy mô hợp đồng (Đơn vị trên Lô)**")
+    contract_size = st.number_input("", value=1.0, key="contract_size", 
+                                   format="%.1f", step=0.1)
 
 
 with col2:
+    st.markdown("**Loại tiền**")
+    currency = st.selectbox(
+        "",
+        options=["Đô la Mỹ", "Euro"], 
+        index=0,
+        key="currency"
+    )
+    
     st.markdown("**Entry**")
     entry = st.number_input("", value=50420.0, key="entry", 
                            format="%.1f", step=1.0)
@@ -164,14 +218,70 @@ with col2:
     st.markdown("**TP tham khảo**")
     tp = st.number_input("", value=0.0, key="tp", 
                         format="%.1f", step=1.0)
+    st.markdown("**Rủi ro**")
+    risk_col1, risk_col2 = st.columns([3, 1])
+    with risk_col1:
+        risk_percentage = st.number_input(
+            "",
+            value=1.0,
+            min_value=0.1,
+            max_value=100.0,
+            step=0.1,
+            format="%.1f",
+            key="risk_percentage"
+        )
+    with risk_col2:
+        risk_unit = st.selectbox(
+            "",
+            options=["%", "$"],
+            index=0,
+            key="risk_unit"
+        )
 
+if risk_unit == "%":
+    lots, units, risk_amount = calculate_position_size(
+        entry, sl, equity, risk_percentage, contract_size
+    )
+else:
+    risk_amount = risk_percentage
+    if entry != 0:
+        stop_loss_percentage = abs(entry - sl) / entry
+        units = risk_amount / (entry * stop_loss_percentage)
+        lots = units / contract_size
+    else:
+        units = lots = 0
 
-risk_amount = equity * 0.01
+st.markdown('<div class="result-container">', unsafe_allow_html=True)
+
+result_col1, result_col2 = st.columns(2)
+
+with result_col1:
+    st.markdown('<p class="label">Các lot (khối lượng giao dịch)</p>', unsafe_allow_html=True)
+    if lots < 0.01:
+        st.markdown('<p class="big-number">?</p>', unsafe_allow_html=True)
+    else:
+        st.markdown(f'<p class="big-number">{format_number(lots, 2)}</p>', unsafe_allow_html=True)
+
+with result_col2:
+    st.markdown('<p class="label">Các đơn vị (khối lượng giao dịch)</p>', unsafe_allow_html=True)
+    st.markdown(f'<p class="big-number">{format_number(units, 3)}</p>', unsafe_allow_html=True)
+
+st.markdown('<p style="margin-top: 10px;">Rủi ro về tiền</p>', unsafe_allow_html=True)
+currency_symbol = "US$" if currency == "Đô la Mỹ" else "€"
+st.markdown(f'<p class="big-number">{format_number(risk_amount, 2)} {currency_symbol}</p>', unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
 sl_percent = abs(entry - sl) / entry * 100 if entry != 0 else 0
-position_size = risk_amount / (sl_percent / 100 * equity) if sl_percent > 0 else 0
-st.write(f"Khối lượng đề xuất: {position_size:.2f} lot")
 if sl_percent > 1:
-    st.warning("⚠️Vượt ngưỡng rủi ro 1%!")
+    st.warning(f"⚠️ SL quá lớn {sl_percent:.2f}%, vượt ngưỡng rủi ro 1%!")
+
+if tp != 0 and entry != 0 and sl != 0:
+    profit = abs(tp - entry)
+    loss = abs(sl - entry)
+    rr_ratio = profit / loss if loss > 0 else 0
+    st.write(f"Tỷ lệ R:R = {rr_ratio:.2f}")
+    
 
 st.subheader("Trạng thái")
     
