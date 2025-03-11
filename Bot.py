@@ -187,7 +187,7 @@ with col1:
                             format="%.1f", step=100.0)
     
     st.markdown("**SL**")
-    sl = st.number_input("", value=50380.0, key="sl", 
+    sl = st.number_input("", value=40000.0, key="sl", 
                          format="%.1f", step=1.0)
     
     st.markdown("**Quy mô hợp đồng (Đơn vị trên Lô)**")
@@ -204,7 +204,7 @@ with col2:
     )
     
     st.markdown("**Entry**")
-    entry = st.number_input("", value=50420.0, key="entry", 
+    entry = st.number_input("", value=50000.0, key="entry", 
                            format="%.1f", step=1.0)
     
     st.markdown("**TP tham khảo**")
