@@ -395,40 +395,42 @@ st.text_area("Đánh Giá (Xu hướng nhỏ)", max_chars=1000, key="small_asses
 
 st.header("Nhận định tổng hợp")
 
-
+# Xác định nếu cả hai đều là Sideway
 is_large_sideway = -40 < p_large < 40
 is_small_sideway = -40 < p_small < 40
 
-
+# Xử lý trường hợp đặc biệt khi cả hai đều là Sideway
 if is_large_sideway and is_small_sideway:
-    st.write("Cực Kỳ Sideway, Cực Kỳ Cẩn Trọng")
+    st.warning("Cực Kỳ Sideway ↔️, Cực Kỳ Cẩn Trọng")
     st.write(f"Xu hướng chung: {trend_large} ({p_large:.2f}%), Xu hướng nhỏ: {trend_small} ({p_small:.2f}%)")
-    st.write("Cả xu hướng lớn và nhỏ đều không rõ ràng. Hạn chế giao dịch hoặc chỉ tham gia với khối lượng rất nhỏ.")
-
+    st.warning("Cả xu hướng lớn và nhỏ đều không rõ ràng. Hạn chế giao dịch hoặc chỉ tham gia với khối lượng rất nhỏ.")
+# So sánh dấu của p_large và p_small để xác định đồng thuận hay ngược pha
 elif (p_large > 0 and p_small > 0) or (p_large < 0 and p_small < 0):
     st.write("Đồng Thuận, Kỳ Vọng")
     
+    # Hiển thị thông tin về xu hướng
     st.write(f"Xu hướng chung: {trend_large} ({p_large:.2f}%), Xu hướng nhỏ: {trend_small} ({p_small:.2f}%)")
     
     if p_large > 0 and p_small > 0:
         if abs(p_large) > abs(p_small):
-            st.write("Xu hướng tăng đang chậm lại, có thể cân nhắc chốt lời một phần.")
+            st.warning("Xu hướng tăng đang chậm lại, có thể cân nhắc chốt lời một phần.")
         else:
-            st.write("Sóng ngắn hạn đang tăng mạnh hơn xu hướng chung, có thể tiếp tục đà tăng.")
+            st.warning("Sóng ngắn hạn đang tăng mạnh hơn xu hướng chung, có thể tiếp tục đà tăng.")
     elif p_large < 0 and p_small < 0:
         if abs(p_large) > abs(p_small):
-            st.write("Xu hướng giảm đang chậm lại, có thể chờ tín hiệu đảo chiều.")
+            st.warning("Xu hướng giảm đang chậm lại, có thể chờ tín hiệu đảo chiều.")
         else:
-            st.write("Sóng ngắn hạn đang giảm mạnh hơn xu hướng chung, có thể tiếp tục đà giảm.")
+            st.warning("Sóng ngắn hạn đang giảm mạnh hơn xu hướng chung, có thể tiếp tục đà giảm.")
 else:
     st.write("Ngược Pha, Cẩn Trọng")
     
+    # Hiển thị thông tin về xu hướng
     st.write(f"Xu hướng chung: {trend_large} ({p_large:.2f}%), Xu hướng nhỏ: {trend_small} ({p_small:.2f}%)")
     
     if p_large > 0 and p_small < 0:
-        st.write("Xu hướng chung là tăng, nhưng sóng ngắn hạn đang điều chỉnh. Cần xác nhận tín hiệu đảo chiều trước khi vào lệnh.")
+        st.warning("Xu hướng chung là tăng, nhưng sóng ngắn hạn đang điều chỉnh. Cần xác nhận tín hiệu đảo chiều trước khi vào lệnh.")
     elif p_large < 0 and p_small > 0:
-        st.write("Xu hướng chung là giảm, nhưng sóng ngắn hạn có dấu hiệu hồi phục. Hãy theo dõi thêm tín hiệu xác nhận.")
+        st.warning("Xu hướng chung là giảm, nhưng sóng ngắn hạn có dấu hiệu hồi phục. Hãy theo dõi thêm tín hiệu xác nhận.")
 
 st.text_area("Đánh Giá (Nhận định tổng hợp)", max_chars=1000, key="overall_assessment", height=200)
 
