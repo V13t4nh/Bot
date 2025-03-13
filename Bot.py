@@ -346,7 +346,7 @@ st.header("Khung thời gian nhỏ")
 
 p_small = calculate_p(small_timeframes, small_states)
 if all(state == "SW" for state in small_states.values()):
-    st.warning("⚠️Tất cả khung nhỏ là Sideway. Vui lòng chọn trạng thái khác để phân tích chính xác hơn.")
+    st.warning("⚠️Tất cả khung nhỏ là Sideway. Vui lòng chọn trạng thái khác")
 
 if p_large > 0 and p_small > 0:
     p_small += 10
